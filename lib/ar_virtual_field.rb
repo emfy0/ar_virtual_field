@@ -13,11 +13,15 @@ module ArVirtualField
     end
 
     def self.table_name(name)
-      "#{name}_outer"
+      sanitize_table_name("#{name}_outer")
     end
 
     def self.table_with_column(name)
-      "#{name}_outer.#{name}"
+      sanitize_table_name("#{name}_outer.#{name}")
+    end
+
+    def self.sanitize_table_name(table)
+      ActiveRecord::Base.connection.quote_table_name(table)
     end
   end
 
