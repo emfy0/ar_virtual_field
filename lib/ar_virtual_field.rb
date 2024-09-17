@@ -11,7 +11,7 @@ module ArVirtualField
     end
   end
 
-  def virtual_field(name, scope:, select: nil, get:, default:)
+  def virtual_field(name, scope: nil, select:, get:, default:)
     name = name.to_s
     current_class = self
     unwrap_arel_expression = -> (exp) { exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp) }
@@ -31,15 +31,9 @@ module ArVirtualField
       scope(scope_name, scope)
 
       scope(:"with_#{name}", -> do
-        scope_query = current_class.send(scope_name)
-
-        if scope_query.group_values.present?
-          scope_query = scope_query.reselect(select_lambda.().as(name), "#{table_name}.id")
-          new_scope = joins("LEFT JOIN (#{scope_query.to_sql}) #{name}_outer ON #{name}_outer.id = #{table_name}.id")
-          HelperMethods.select_append(new_scope, "#{name}_outer.#{name} AS #{name}")
-        else
-          HelperMethods.select_append(send(scope_name), select_lambda.().as(name))
-        end
+        scope_query = current_class.send(scope_name).select(select_lambda.().as(name), "#{table_name}.id")
+        new_scope = joins("LEFT JOIN (#{scope_query.to_sql}) #{name}_outer ON #{name}_outer.id = #{table_name}.id")
+        HelperMethods.select_append(new_scope, "#{name}_outer.#{name} AS #{name}")
       end)
     else
       scope(:"with_#{name}", -> do
