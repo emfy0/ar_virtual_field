@@ -31,7 +31,7 @@ Parameters:
   - `scope`: A lambda defining a scope that fetches the virtual field value (optional).
   - `select`: SQL selection logic (can be a `string | arel_node` or a lambda returning an SQL `string | arel_node`) to define how the field is computed.
   - `get`: A method to retrieve the value of the virtual field when the field isn't fetched via SQL.
-  - `default`: A default value for the virtual field if the result is nil.
+  - `default`: A default value for the virtual field if the result is nil (optional).
 
 Example:
 
@@ -59,6 +59,16 @@ User.with_total_orders.where(total_orders: 5)
 ```
 
 This will include the total_orders virtual field in the SQL query and allow filtering by it.
+
+### Also it can be used without scope:
+
+```ruby
+class User < ApplicationRecord
+  virtual_field :fullname,
+    select: -> { "name || surname" },
+    get: -> { "#{name}#{surname}" }
+end
+```
 
 ## Development
 
