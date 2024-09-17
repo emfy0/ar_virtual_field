@@ -29,7 +29,7 @@ virtual_field :virtual_attribute,
 Parameters:
   - `name`: The name of the virtual field.
   - `scope`: A lambda defining a scope that fetches the virtual field value (optional).
-  - `select`: SQL selection logic (can be a string or a lambda returning an SQL string) to define how the field is computed.
+  - `select`: SQL selection logic (can be a `string | arel_node` or a lambda returning an SQL `string | arel_node`) to define how the field is computed.
   - `get`: A method to retrieve the value of the virtual field when the field isn't fetched via SQL.
   - `default`: A default value for the virtual field if the result is nil.
 
