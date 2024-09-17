@@ -1,0 +1,65 @@
+# frozen_string_literal: true
+
+module ArVirtualField
+  module HelperMethods
+    def self.select_append(relation, *values)
+      if relation.select_values.empty?
+        values.unshift(relation.arel_table[Arel.star])
+      end
+
+      relation.select(*values)
+    end
+  end
+
+  def virtual_field(name, scope:, select: nil, get:, default:)
+    name = name.to_s
+    current_class = self
+    unwrap_arel_expression = -> (exp) { exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp) }
+
+    select_lambda =
+      case select
+      when Proc
+        -> { unwrap_arel_expression.(select.()) }
+      else
+        arel = unwrap_arel_expression.(select)
+        -> { arel }
+      end
+
+    if scope
+      scope_name = :"_scope_#{name}"
+
+      scope(scope_name, scope)
+
+      scope(:"with_#{name}", -> do
+        scope_query = current_class.send(scope_name)
+
+        if scope_query.group_values.present?
+          scope_query = scope_query.reselect(select_lambda.().as(name), "#{table_name}.id")
+          new_scope = joins("LEFT JOIN (#{scope_query.to_sql}) #{name}_outer ON #{name}_outer.id = #{table_name}.id")
+          HelperMethods.select_append(new_scope, "#{name}_outer.#{name} AS #{name}")
+        else
+          HelperMethods.select_append(send(scope_name), select_lambda.().as(name))
+        end
+      end)
+    else
+      scope(:"with_#{name}", -> do
+        HelperMethods.select_append(self, select_lambda.().as(name))
+      end)
+    end
+
+    method_name = :"ar_virtual_field_#{name}"
+
+    define_method(method_name, &get)
+    define_method(name) do
+      if ActiveRecord::Base.connection.query_cache_enabled
+        attributes.key?(name) ? (self[name] || default) : send(method_name)
+      else
+        send(method_name)
+      end
+    end
+  end
+end
+
+ActiveSupport.on_load(:active_record) do
+  ActiveRecord::Base.extend(ArVirtualField)
+end
