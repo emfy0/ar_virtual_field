@@ -63,6 +63,9 @@ user.fullname # => value computed by database
 User.with_total_orders.where(ArVirtualField[:total_orders] => 5)
 ```
 
+> [!WARNING]  
+> `ArVirtualField[]` doesn't sanitize its value itself, this example relies on `#where` sanitation, use with caution
+
 This will include the total_orders virtual field in the SQL query and allow filtering by it.
 
 ## Contributing
