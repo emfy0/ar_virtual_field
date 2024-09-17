@@ -60,7 +60,7 @@ user.fullname # => value computed by database
  - `with_#{name}`: Automatically generated scope to include the virtual field in queries. You can use this scope in your ActiveRecord queries like so:
 
 ```ruby
-User.with_total_orders.where(total_orders: 5)
+User.with_total_orders.where(ArVirtualField[:total_orders] => 5)
 ```
 
 This will include the total_orders virtual field in the SQL query and allow filtering by it.

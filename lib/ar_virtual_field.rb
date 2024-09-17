@@ -1,4 +1,6 @@
-# frozen_string_literal: true
+# frozen_string_litera: true
+
+require "active_record"
 
 module ArVirtualField
   module HelperMethods
@@ -9,6 +11,18 @@ module ArVirtualField
 
       relation.select(*values)
     end
+
+    def self.table_name(name)
+      "#{name}_outer"
+    end
+
+    def self.table_with_column(name)
+      "#{name}_outer.#{name}"
+    end
+  end
+
+  def self.[](field)
+    Arel.sql(HelperMethods.table_with_column(field))
   end
 
   def virtual_field(name, scope: nil, select:, get:, default: nil)
@@ -31,9 +45,14 @@ module ArVirtualField
       scope(scope_name, scope)
 
       scope(:"with_#{name}", -> do
-        scope_query = current_class.send(scope_name).select(select_lambda.().as(name), "#{table_name}.id")
-        new_scope = joins("LEFT JOIN (#{scope_query.to_sql}) #{name}_outer ON #{name}_outer.id = #{table_name}.id")
-        HelperMethods.select_append(new_scope, "#{name}_outer.#{name} AS #{name}")
+        scope_query = current_class
+          .send(scope_name)
+          .select(select_lambda.().as(name), "#{table_name}.id")
+
+        HelperMethods.select_append(joins(<<~SQL.squish), "#{HelperMethods.table_with_column(name)} AS #{name}")
+          LEFT JOIN (#{scope_query.to_sql}) #{HelperMethods.table_name(name)}
+            ON #{HelperMethods.table_name(name)}.id = #{table_name}.id
+        SQL
       end)
     else
       scope(:"with_#{name}", -> do
