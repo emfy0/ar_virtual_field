@@ -11,7 +11,7 @@ module ArVirtualField
     end
   end
 
-  def virtual_field(name, scope: nil, select:, get:, default:)
+  def virtual_field(name, scope: nil, select:, get:, default: nil)
     name = name.to_s
     current_class = self
     unwrap_arel_expression = -> (exp) { exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp) }
