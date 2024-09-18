@@ -39,12 +39,12 @@ Example:
 class User < ApplicationRecord
   virtual_field :total_orders,
     scope: -> { joins(:orders).group(:id) },
-    select: -> { "COUNT(orders.id)" },
+    select: "COUNT(orders.id)",
     get: -> { orders.count },
     default: 0
 
   virtual_field :fullname,
-    select: -> { "name || surname" },
+    select: "name || surname",
     get: -> { "#{name}#{surname}" }
 end
 
@@ -52,7 +52,7 @@ users_with_orders = User.with_total_orders # queries database once
 
 user = users_with_orders.first
 user.total_orders # => value computed by database
-user.fullname # => value computed by database
+user.fullname # => value computed by ruby
 ```
 
 ### Scopes and querying:
@@ -60,11 +60,8 @@ user.fullname # => value computed by database
  - `with_#{name}`: Automatically generated scope to include the virtual field in queries. You can use this scope in your ActiveRecord queries like so:
 
 ```ruby
-User.with_total_orders.where(ArVirtualField[:total_orders] => 5)
+User.with_total_orders.where('total_orders = ?', 5)
 ```
-
-> [!WARNING]  
-> `ArVirtualField[]` doesn't sanitize its value itself, this example relies on `#where` sanitation, use with caution
 
 This will include the total_orders virtual field in the SQL query and allow filtering by it.
 

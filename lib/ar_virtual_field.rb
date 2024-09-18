@@ -21,10 +21,6 @@ module ArVirtualField
     end
   end
 
-  def self.[](field)
-    Arel.sql(HelperMethods.table_with_column(field))
-  end
-
   def virtual_field(name, scope: nil, select:, get:, default: nil)
     name = name.to_s
     current_class = self
@@ -51,7 +47,11 @@ module ArVirtualField
 
         HelperMethods.select_append(joins(<<~SQL.squish), "#{HelperMethods.table_with_column(name)} AS #{name}")
           LEFT JOIN (#{scope_query.to_sql}) #{HelperMethods.table_name(name)}
-            ON #{HelperMethods.table_name(name)}.id = #{table_name}.id
+            ON #{
+              Array(primary_key).map do |pk|
+                "#{HelperMethods.table_name(name)}.#{pk} = #{table_name}.#{pk}"
+              end.join(' AND')
+            }
         SQL
       end)
     else
