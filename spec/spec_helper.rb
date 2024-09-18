@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "ar_virtual_field"
+require "fileutils"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
