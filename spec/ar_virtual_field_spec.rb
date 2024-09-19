@@ -60,7 +60,7 @@ describe ArVirtualField do
       end
 
       it 'searches by virtual_field' do
-        expect(scope.find_by!('fullname = ?', "#{user.name}#{user.surname}")).to eq user
+        expect(scope.find_by!(User.virtual_fields[:fullname].eq("#{user.name}#{user.surname}"))).to eq user
       end
     end
   end
@@ -86,7 +86,9 @@ describe ArVirtualField do
       end
 
       it 'searches by virtual_field' do
-        expect(scope.find_by!('total_orders = ?', Order.where(user: user).count)).to eq user
+        expect(
+          scope.find_by!(User.virtual_fields[:total_orders].eq(Order.where(user: user).count))
+        ).to eq user
       end
     end
   end
