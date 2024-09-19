@@ -21,7 +21,21 @@ module ArVirtualField
     end
   end
 
+  class FieldsData < Hash
+    def [](field)
+      statement = super(field.to_sym)
+      raise "Unknown virtual field `#{field}`" unless statement
+      statement.()
+    end
+  end
+
+  def virtual_fields
+    @ar_virtual_fields || FieldsData.new
+  end
+
   def virtual_field(name, scope: nil, select:, get:, default: nil)
+    @ar_virtual_fields ||= FieldsData.new
+
     name = name.to_s
     current_class = self
     unwrap_arel_expression = -> (exp) { exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp) }
@@ -36,6 +50,8 @@ module ArVirtualField
       end
 
     if scope
+      @ar_virtual_fields[name.to_sym] = -> { Arel.sql(HelperMethods.table_with_column(name)) }
+
       scope_name = :"_scope_#{name}"
 
       scope(scope_name, scope)
@@ -55,6 +71,8 @@ module ArVirtualField
         SQL
       end)
     else
+      @ar_virtual_fields[name.to_sym] = -> { select_lambda.() }
+
       scope(:"with_#{name}", -> do
         HelperMethods.select_append(self, select_lambda.().as(name))
       end)
