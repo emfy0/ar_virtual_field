@@ -89,6 +89,10 @@ describe ArVirtualField do
         expect(
           scope.find_by!(User.virtual_fields[:total_orders].eq(Order.where(user: user).count))
         ).to eq user
+
+        expect(
+          scope.find_by!(User.virtual_fields[:fullname].eq(user.fullname))
+        ).to eq user
       end
     end
   end
