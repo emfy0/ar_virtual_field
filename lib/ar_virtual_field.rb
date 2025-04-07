@@ -38,7 +38,11 @@ module ArVirtualField
 
     name = name.to_s
     current_class = self
-    unwrap_arel_expression = -> (exp) { exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp) }
+    unwrap_arel_expression = -> (exp) {
+      Arel::Nodes::Grouping.new(
+        exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp)
+      )
+    }
 
     select_lambda =
       case select
