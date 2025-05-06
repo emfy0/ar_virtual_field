@@ -19,11 +19,11 @@ gem 'ar_virtual_field'
 To define a virtual field, use the virtual_field method in your model:
 
 ```ruby
-virtual_field :virtual_attribute, 
+virtual_field :virtual_attribute,
   scope: -> { joins(:related_model).where(related_models: { some_column: value }) },
   select: -> { "SUM(related_models.some_value)" },
   get: -> { calculate_some_value },
-  default: 0
+  default: '0'
 ```
 
 Parameters:
@@ -31,7 +31,7 @@ Parameters:
   - `scope`: A lambda defining a scope that fetches the virtual field value (optional).
   - `select`: SQL selection logic (can be a string or arel node or a lambda returning a string or arel_node) to define how the field is computed.
   - `get`: A method to retrieve the value of the virtual field when the field isn't fetched via SQL.
-  - `default`: A default value for the virtual field if the result is nil (optional).
+  - `default`: A default value(can be a string or arel node or a lambda returning a string or arel_node) for the virtual field if the result is nil (optional).
 
 Example:
 
@@ -41,7 +41,7 @@ class User < ApplicationRecord
     scope: -> { joins(:orders).group(:id) },
     select: "COUNT(orders.id)",
     get: -> { orders.count },
-    default: 0
+    default: '0'
 
   virtual_field :fullname,
     select: "name || surname",
