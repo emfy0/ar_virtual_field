@@ -27,19 +27,19 @@ describe ArVirtualField do
         scope: -> { left_joins(:orders).group(:id) },
         select: "COUNT(orders.id)",
         get: -> { orders.count },
-        default: 0
+        default: '0'
     end
   end
 
   before do
     user = User.create!(name: 'test', surname: 'testsur')
-    other_user = User.create!
+    User.create!
 
     Order.create!(user: user)
-    Order.create!(user: other_user)
   end
 
   let(:user) { scope.first! }
+  let(:other_user) { scope.last! }
 
   context 'when used without `:scope`' do
     context 'when queried without scope' do
@@ -79,10 +79,14 @@ describe ArVirtualField do
       let(:scope) { User.with_total_orders }
 
       it 'evaluated code in database' do
-        total_orders = Order.where(user: user).count
+        user_total_orders = Order.where(user: user).count
+        other_user_total_orders = Order.where(user: other_user).count
 
-        expect(user[:total_orders]).to eq total_orders
-        expect(user.total_orders).to eq total_orders
+        expect(user[:total_orders]).to eq user_total_orders
+        expect(user.total_orders).to eq user_total_orders
+
+        expect(other_user[:total_orders]).to eq other_user_total_orders
+        expect(other_user.total_orders).to eq other_user_total_orders
       end
 
       it 'searches by virtual_field' do

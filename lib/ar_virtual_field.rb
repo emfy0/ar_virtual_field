@@ -19,6 +19,22 @@ module ArVirtualField
     def self.table_with_column(name)
       "#{name}_outer.#{name}"
     end
+
+    def self.unwrap_arel_expression(exp)
+      Arel::Nodes::Grouping.new(
+        exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp)
+      )
+    end
+
+    def self.wrap_to_lambda(exp)
+      case exp
+      when Proc
+        -> { HelperMethods.unwrap_arel_expression(exp.()) }
+      else
+        arel = HelperMethods.unwrap_arel_expression(exp)
+        -> { arel }
+      end
+    end
   end
 
   class FieldsData < Hash
@@ -38,20 +54,20 @@ module ArVirtualField
 
     name = name.to_s
     current_class = self
-    unwrap_arel_expression = -> (exp) {
-      Arel::Nodes::Grouping.new(
-        exp.is_a?(Arel::Nodes::NodeExpression) ? exp : Arel.sql(exp)
-      )
-    }
 
-    select_lambda =
-      case select
-      when Proc
-        -> { unwrap_arel_expression.(select.()) }
+    if default
+      default = HelperMethods.wrap_to_lambda(default)
+    end
+
+    select = HelperMethods.wrap_to_lambda(select)
+
+    select_lambda = -> do
+      if default
+        Arel::Nodes::NamedFunction.new('COALESCE', [select.(), default.()])
       else
-        arel = unwrap_arel_expression.(select)
-        -> { arel }
+        select.()
       end
+    end
 
     if scope
       @ar_virtual_fields[name.to_sym] = -> { Arel.sql(HelperMethods.table_with_column(name)) }
