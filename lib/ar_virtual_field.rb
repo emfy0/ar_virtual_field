@@ -103,7 +103,7 @@ module ArVirtualField
     define_method(method_name, &get)
     define_method(name) do
       if ActiveRecord::Base.connection.query_cache_enabled
-        attributes.key?(name) ? (self[name] || default) : send(method_name)
+        attributes.key?(name) ? self[name] : send(method_name)
       else
         send(method_name)
       end
