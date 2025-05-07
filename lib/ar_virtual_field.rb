@@ -61,16 +61,15 @@ module ArVirtualField
 
     select = HelperMethods.wrap_to_lambda(select)
 
-    select_lambda = -> do
-      if default
-        Arel::Nodes::NamedFunction.new('COALESCE', [select.(), default.()])
-      else
-        select.()
-      end
-    end
-
     if scope
-      @ar_virtual_fields[name.to_sym] = -> { Arel.sql(HelperMethods.table_with_column(name)) }
+      field_name = Arel.sql(HelperMethods.table_with_column(name))
+
+      select_lambda =
+        if default
+          -> { Arel::Nodes::NamedFunction.new('COALESCE', [field_name, default.()]) }
+        else
+          -> { field_name }
+        end
 
       scope_name = :"_scope_#{name}"
 
@@ -79,9 +78,9 @@ module ArVirtualField
       scope(:"with_#{name}", -> do
         scope_query = current_class
           .send(scope_name)
-          .select(select_lambda.().as(name), "#{table_name}.id")
+          .select(select.().as(name), "#{table_name}.id")
 
-        HelperMethods.select_append(joins(<<~SQL.squish), "#{HelperMethods.table_with_column(name)} AS #{name}")
+        HelperMethods.select_append(joins(<<~SQL.squish), select_lambda.().as(name))
           LEFT JOIN (#{scope_query.to_sql}) #{HelperMethods.table_name(name)}
             ON #{
               Array(primary_key).map do |pk|
@@ -91,12 +90,19 @@ module ArVirtualField
         SQL
       end)
     else
-      @ar_virtual_fields[name.to_sym] = -> { select_lambda.() }
+      select_lambda =
+        if default
+          -> { Arel::Nodes::NamedFunction.new('COALESCE', [select.(), default.()]) }
+        else
+          select
+        end
 
       scope(:"with_#{name}", -> do
         HelperMethods.select_append(self, select_lambda.().as(name))
       end)
     end
+
+    @ar_virtual_fields[name.to_sym] = select_lambda
 
     method_name = :"ar_virtual_field_#{name}"
 

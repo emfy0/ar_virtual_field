@@ -33,13 +33,13 @@ describe ArVirtualField do
 
   before do
     user = User.create!(name: 'test', surname: 'testsur')
-    User.create!
+    User.create!(name: 'other')
 
     Order.create!(user: user)
   end
 
-  let(:user) { scope.first! }
-  let(:other_user) { scope.last! }
+  let(:user) { scope.find_by!(name: 'test') }
+  let(:other_user) { scope.find_by!(name: 'other') }
 
   context 'when used without `:scope`' do
     context 'when queried without scope' do
@@ -84,9 +84,11 @@ describe ArVirtualField do
 
         expect(user[:total_orders]).to eq user_total_orders
         expect(user.total_orders).to eq user_total_orders
+        expect(user.total_orders).to eq 1
 
         expect(other_user[:total_orders]).to eq other_user_total_orders
         expect(other_user.total_orders).to eq other_user_total_orders
+        expect(other_user.total_orders).to eq 0
       end
 
       it 'searches by virtual_field' do
